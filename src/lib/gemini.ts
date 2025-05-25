@@ -14,8 +14,8 @@ export async function getGeminiResponse(prompt: string) {
       throw new Error('Gemini API key is not configured. Please check your environment variables.');
     }
 
-    // Initialize the model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+    // Initialize the model with the correct model name
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     // Generate content
     const result = await model.generateContent(prompt);
