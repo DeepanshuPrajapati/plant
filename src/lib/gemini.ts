@@ -15,7 +15,7 @@ export async function getGeminiResponse(prompt: string) {
     }
 
     // Initialize the model with Gemini 1.5 Pro
-    const model = genAI.getGenerativeModel({ model: "Gemini 1.5 Flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Generate content
     const result = await model.generateContent(prompt);
