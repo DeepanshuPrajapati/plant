@@ -25,6 +25,10 @@ export async function getGeminiResponse(prompt: string) {
     console.error('Error getting Gemini response:', error);
     
     if (error instanceof Error) {
+      // Check for quota exceeded error
+      if (error.message.includes('429') || error.message.includes('quota')) {
+        return "You've reached the API rate limit. Please wait a moment before trying again.";
+      }
       if (error.message.includes('API key')) {
         return "Error: The API key is invalid or not properly configured. Please check your environment variables.";
       }
