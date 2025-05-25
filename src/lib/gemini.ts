@@ -15,7 +15,7 @@ export async function getGeminiResponse(prompt: string) {
     }
 
     // Initialize the model with the correct model name
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
 
     // Generate content
     const result = await model.generateContent(prompt);
