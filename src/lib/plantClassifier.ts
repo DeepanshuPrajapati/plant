@@ -38,7 +38,7 @@ const MEDICINAL_PROPERTIES = {
 
 export async function loadModel() {
   try {
-    const model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json');
+    const model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/mobilenetv2/model.json');
     return model;
   } catch (error) {
     console.error('Error loading model:', error);
