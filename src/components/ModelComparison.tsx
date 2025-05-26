@@ -10,50 +10,86 @@ interface ModelResult {
   inferenceTime: number;
 }
 
-const PLANT_CLASSES = [
-  'Tulsi (Holy Basil)',
-  'Neem',
-  'Aloe Vera',
-  'Turmeric',
-  'Mint',
-  'Ginger',
-  'Lemongrass',
-  'Moringa',
-  'Ashwagandha',
-  'Brahmi'
+const PREDICTIONS = [
+  // Tulsi predictions
+  {
+    mobilenet: {
+      model: 'MobileNetV2',
+      predictions: [
+        { class: 'Tulsi (Holy Basil)', confidence: 95.8 },
+        { class: 'Mint', confidence: 75.2 },
+        { class: 'Moringa', confidence: 65.4 }
+      ],
+      inferenceTime: 120
+    },
+    efficientnet: {
+      model: 'EfficientNetV2',
+      predictions: [
+        { class: 'Tulsi (Holy Basil)', confidence: 97.2 },
+        { class: 'Mint', confidence: 78.5 },
+        { class: 'Moringa', confidence: 68.9 }
+      ],
+      inferenceTime: 180
+    }
+  },
+  // Neem predictions
+  {
+    mobilenet: {
+      model: 'MobileNetV2',
+      predictions: [
+        { class: 'Neem', confidence: 94.2 },
+        { class: 'Moringa', confidence: 72.8 },
+        { class: 'Tulsi (Holy Basil)', confidence: 62.5 }
+      ],
+      inferenceTime: 125
+    },
+    efficientnet: {
+      model: 'EfficientNetV2',
+      predictions: [
+        { class: 'Neem', confidence: 96.5 },
+        { class: 'Moringa', confidence: 75.2 },
+        { class: 'Tulsi (Holy Basil)', confidence: 65.8 }
+      ],
+      inferenceTime: 175
+    }
+  },
+  // Aloe Vera predictions
+  {
+    mobilenet: {
+      model: 'MobileNetV2',
+      predictions: [
+        { class: 'Aloe Vera', confidence: 96.5 },
+        { class: 'Neem', confidence: 71.3 },
+        { class: 'Moringa', confidence: 63.7 }
+      ],
+      inferenceTime: 118
+    },
+    efficientnet: {
+      model: 'EfficientNetV2',
+      predictions: [
+        { class: 'Aloe Vera', confidence: 98.1 },
+        { class: 'Neem', confidence: 73.9 },
+        { class: 'Moringa', confidence: 66.2 }
+      ],
+      inferenceTime: 172
+    }
+  }
 ];
 
 function ModelComparison({ imageUrl }: { imageUrl: string }) {
   const [results, setResults] = useState<ModelResult[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [predictionIndex, setPredictionIndex] = useState(0);
 
   const analyzeImage = async () => {
     setIsAnalyzing(true);
     
     // Simulate API calls with different response times
-    const mobilenetResult = await new Promise<ModelResult>((resolve) => 
-      setTimeout(() => resolve({
-        model: 'MobileNetV2',
-        predictions: PLANT_CLASSES.slice(0, 3).map((className, i) => ({
-          class: className,
-          confidence: (0.9 - i * 0.2) * 100
-        })),
-        inferenceTime: 120
-      }), 1000)
-    );
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const efficientnetResult = await new Promise<ModelResult>((resolve) =>
-      setTimeout(() => resolve({
-        model: 'EfficientNetV2',
-        predictions: PLANT_CLASSES.slice(0, 3).map((className, i) => ({
-          class: className,
-          confidence: (0.95 - i * 0.15) * 100
-        })),
-        inferenceTime: 180
-      }), 1500)
-    );
-
-    setResults([mobilenetResult, efficientnetResult]);
+    const currentPrediction = PREDICTIONS[predictionIndex];
+    setResults([currentPrediction.mobilenet, currentPrediction.efficientnet]);
+    setPredictionIndex((prevIndex) => (prevIndex + 1) % 3);
     setIsAnalyzing(false);
   };
 
@@ -91,7 +127,7 @@ function ModelComparison({ imageUrl }: { imageUrl: string }) {
                 {result.predictions.map((pred) => (
                   <div key={pred.class} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      {pred.confidence > 80 && (
+                      {pred.confidence > 90 && (
                         <Check className="h-4 w-4 text-emerald-500" />
                       )}
                       <span className="text-gray-700">{pred.class}</span>
