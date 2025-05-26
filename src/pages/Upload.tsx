@@ -1,7 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload as UploadIcon, Image, Check, AlertCircle } from 'lucide-react';
 import ModelComparison from '../components/ModelComparison';
+import { loadModel, classifyImage } from '../lib/plantClassifier';
+import * as tf from '@tensorflow/tfjs';
 
 interface AnalysisResult {
   name: string;
@@ -15,13 +17,35 @@ function Upload() {
   const [preview, setPreview] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [model, setModel] = useState<tf.LayersModel | null>(null);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    // Load the model when component mounts
+    const initModel = async () => {
+      try {
+        const loadedModel = await loadModel();
+        setModel(loadedModel);
+      } catch (err) {
+        setError('Failed to load plant classification model. Please try again later.');
+      }
+    };
+    initModel();
+
+    // Cleanup function
+    return () => {
+      if (model) {
+        model.dispose();
+      }
+    };
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     setFile(file);
     setPreview(URL.createObjectURL(file));
     handleAnalysis(file);
-  }, []);
+  }, [model]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -30,22 +54,36 @@ function Upload() {
   });
 
   const handleAnalysis = async (file: File) => {
+    if (!model) {
+      setError('Model is not loaded yet. Please try again.');
+      return;
+    }
+
     setIsAnalyzing(true);
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setResult({
-        name: 'Tulsi (Holy Basil)',
-        confidence: 95.8,
-        properties: [
-          'Anti-inflammatory',
-          'Adaptogenic',
-          'Immunomodulator',
-          'Antioxidant',
-        ],
-        description: 'Tulsi is a sacred plant in traditional Indian medicine, known for its diverse healing properties including stress relief, immune system support, and respiratory health benefits.',
+    setError('');
+
+    try {
+      // Create an image element for classification
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      
+      await new Promise((resolve) => {
+        img.onload = resolve;
       });
+
+      const prediction = await classifyImage(model, img);
+
+      setResult({
+        name: prediction.className,
+        confidence: prediction.confidence,
+        properties: prediction.properties,
+        description: prediction.description
+      });
+    } catch (err) {
+      setError('Failed to analyze the image. Please try again.');
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -56,6 +94,12 @@ function Upload() {
           Upload an image of a medicinal plant to identify its properties and traditional uses.
         </p>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div
         {...getRootProps()}
