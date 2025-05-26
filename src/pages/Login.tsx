@@ -1,32 +1,53 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, User, Lock } from 'lucide-react';
+import { LogIn, User, Lock, Mail, KeyRound } from 'lucide-react';
 
 function Login() {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [otp, setOTP] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const { login, verifyOTP, resendOTP, pendingEmail } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Simple validation
-    if (!username || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
+    if (!showOTPInput) {
+      // Initial login step
+      if (!username || !email) {
+        setError('Please fill in all fields');
+        return;
+      }
 
-    // Mock authentication - in a real app, this would call an API
-    if (password === 'password123') {
-      login(username);
-      navigate('/');
+      if (!email.includes('@')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      login(username, email);
+      setShowOTPInput(true);
     } else {
-      setError('Invalid credentials');
+      // OTP verification step
+      if (!otp) {
+        setError('Please enter the OTP');
+        return;
+      }
+
+      if (verifyOTP(otp)) {
+        navigate('/');
+      } else {
+        setError('Invalid OTP');
+      }
     }
+  };
+
+  const handleResendOTP = () => {
+    resendOTP();
+    setError('New OTP has been sent to your email');
   };
 
   return (
@@ -34,7 +55,9 @@ function Login() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-emerald-800 mb-4">Welcome Back</h1>
         <p className="text-gray-600">
-          Sign in to access your AyurLeaf AI account
+          {showOTPInput 
+            ? `Enter the OTP sent to ${pendingEmail}`
+            : 'Sign in to access your AyurLeaf AI account'}
         </p>
       </div>
 
@@ -46,81 +69,87 @@ function Login() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
+          {!showOTPInput ? (
+            <>
+              <div className="space-y-2">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Enter your username"
+                  />
+                </div>
               </div>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                placeholder="Enter your username"
-              />
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Enter your email"
+                  />
+                </div>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
-                placeholder="Enter your password"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                Remember me
+            </>
+          ) : (
+            <div className="space-y-2">
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                Enter OTP
               </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <KeyRound className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOTP(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder="Enter 6-digit OTP"
+                  maxLength={6}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                className="text-sm text-emerald-600 hover:text-emerald-500 mt-2"
+              >
+                Resend OTP
+              </button>
             </div>
-            <div className="text-sm">
-              <a href="#" className="font-medium text-emerald-600 hover:text-emerald-500">
-                Forgot password?
-              </a>
-            </div>
-          </div>
+          )}
 
           <button
             type="submit"
             className="w-full flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             <LogIn className="h-5 w-5" />
-            <span>Sign In</span>
+            <span>{showOTPInput ? 'Verify OTP' : 'Send OTP'}</span>
           </button>
-
-          <div className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <a href="#" className="font-medium text-emerald-600 hover:text-emerald-500">
-              Sign up now
-            </a>
-          </div>
         </form>
       </div>
 
       <div className="mt-8 text-center text-sm text-gray-500">
-        <p>For demo purposes, use any username and password: password123</p>
+        <p>For demo purposes, the OTP will be logged to the console.</p>
       </div>
     </div>
   );
